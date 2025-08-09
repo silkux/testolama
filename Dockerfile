@@ -1,15 +1,13 @@
 FROM ollama/ollama:latest
 
-# Set environment variables for Railway
-ENV OLLAMA_HOST=0.0.0.0
-ENV OLLAMA_ORIGINS=*
-ENV PORT=11434
-
-# Expose the port
+# Railway tries to use /bin/sh, so we need to override the entrypoint
+# to handle shell commands properly
 EXPOSE 11434
 
-# Start Ollama server and pull model
-CMD ollama serve & \
-    sleep 15 && \
-    ollama pull llama3.2:1b && \
-    wait
+# Create a wrapper script that Railway can execute with sh
+RUN echo '#!/bin/sh\nollama serve' > /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+# Set shell as entrypoint so Railway's /bin/sh command works
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["/entrypoint.sh"]
